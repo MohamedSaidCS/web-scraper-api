@@ -1,6 +1,11 @@
 package models
 
-import "github.com/MohamedSaidCS/web-scraper-api/db"
+import (
+	"fmt"
+
+	"github.com/MohamedSaidCS/web-scraper-api/db"
+	"github.com/lib/pq"
+)
 
 type Article struct {
 	ID       int64  `json:"id"`
@@ -10,7 +15,7 @@ type Article struct {
 }
 
 func (a *Article) Create() error {
-	query := "INSERT INTO articles (title, link) VALUES ($1, $2) RETURNING id, timestamp"
+	query := "INSERT INTO articles (title, link, timestamp) VALUES ($1, $2, $3) RETURNING id, timestamp"
 	stmt, err := db.DB.Prepare(query)
 	if err != nil {
 		return err
@@ -18,8 +23,12 @@ func (a *Article) Create() error {
 
 	defer stmt.Close()
 
-	err = stmt.QueryRow(a.Title, a.Link).Scan(&a.ID, &a.Timesamp)
+	err = stmt.QueryRow(a.Title, a.Link, a.Timesamp).Scan(&a.ID, &a.Timesamp)
 	if err != nil {
+		pqErr, ok := err.(*pq.Error)
+		if ok && pqErr.Code == "23505" {
+			return fmt.Errorf("article with link %s already exists", a.Link)
+		}
 		return err
 	}
 
