@@ -5,6 +5,7 @@ import (
 	"github.com/MohamedSaidCS/web-scraper-api/routes"
 	"github.com/MohamedSaidCS/web-scraper-api/scraper"
 	"github.com/gin-gonic/gin"
+	_ "github.com/joho/godotenv/autoload"
 	"github.com/robfig/cron/v3"
 )
 
@@ -14,10 +15,13 @@ func main() {
 	c := cron.New()
 
 	c.AddFunc("@every 5m", func() {
-
-		for _, site := range scraper.Sites {
-			go scraper.ScrapeSite(site.URL, site.ArticleSelector, site.Extractor, 10)
+		for _, site := range scraper.SitesRSS {
+			scraper.ScrapeSiteRSS(site, 10)
 		}
+
+		// for _, site := range scraper.SitesHTML {
+		// 	scraper.ScrapeSiteHTML(site.URL, site.ArticleSelector, site.Extractor, 10)
+		// }
 	})
 
 	c.Start()

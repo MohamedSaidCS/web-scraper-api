@@ -14,23 +14,40 @@ type SiteInfo struct {
 	Extractor       func(s *goquery.Selection) (string, string, string)
 }
 
-var Sites = map[string]SiteInfo{
+var SitesHTML = map[string]SiteInfo{
 	"ArsTechnica": {
 		URL:             "https://arstechnica.com/gadgets/",
 		ArticleSelector: "article",
-		Extractor:       ArsTechninaExtractor,
+		Extractor: func(s *goquery.Selection) (string, string, string) {
+			anchorTag := s.Find("h2 > a")
+
+			title := anchorTag.Text()
+			link, _ := anchorTag.Attr("href")
+			timestamp, _ := s.Find("time").Attr("datetime")
+
+			return title, link, timestamp
+		},
 	},
 	"TechCrunch": {
 		URL:             "https://techcrunch.com/latest/",
 		ArticleSelector: ".post",
-		Extractor:       TechChrunchExtractor,
+		Extractor: func(s *goquery.Selection) (string, string, string) {
+			anchorTag := s.Find(".loop-card__title > a")
+
+			title := anchorTag.Text()
+			link, _ := anchorTag.Attr("href")
+			timestamp, _ := s.Find("time").Attr("datetime")
+
+			return title, link, timestamp
+		},
 	},
 }
 
-func ScrapeSite(website string, articleSelector string, extractor func(s *goquery.Selection) (string, string, string), maxArticles int) {
+func ScrapeSiteHTML(website string, articleSelector string, extractor func(s *goquery.Selection) (string, string, string), maxArticles int) {
 	res, err := http.Get(website)
 	if err != nil || res.StatusCode != 200 {
-		log.Fatal(err)
+		log.Println(err)
+		return
 	}
 
 	defer res.Body.Close()
@@ -38,6 +55,7 @@ func ScrapeSite(website string, articleSelector string, extractor func(s *goquer
 	doc, err := goquery.NewDocumentFromReader(res.Body)
 	if err != nil {
 		log.Println(err)
+		return
 	}
 
 	doc.Find(articleSelector).Each(func(i int, s *goquery.Selection) {
@@ -54,7 +72,6 @@ func ScrapeSite(website string, articleSelector string, extractor func(s *goquer
 		}
 
 		err = artice.Create()
-
 		if err != nil {
 			log.Println(err)
 		}
