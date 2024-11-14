@@ -16,11 +16,11 @@ func main() {
 
 	c.AddFunc("@every 5m", func() {
 		for _, site := range scraper.SitesRSS {
-			scraper.ScrapeSiteRSS(site, 10)
+			go scraper.ScrapeSiteRSS(site, 10)
 		}
 
 		// for _, site := range scraper.SitesHTML {
-		// 	scraper.ScrapeSiteHTML(site.URL, site.ArticleSelector, site.Extractor, 10)
+		// 	go scraper.ScrapeSiteHTML(site.URL, site.ArticleSelector, site.Extractor, 10)
 		// }
 	})
 
