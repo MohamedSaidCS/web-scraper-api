@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/MohamedSaidCS/web-scraper-api/db"
+	"github.com/MohamedSaidCS/web-scraper-api/middlewares"
 	"github.com/MohamedSaidCS/web-scraper-api/routes"
 	"github.com/MohamedSaidCS/web-scraper-api/scraper"
 	"github.com/gin-gonic/gin"
@@ -27,6 +28,8 @@ func main() {
 	c.Start()
 
 	server := gin.Default()
+
+	server.Use(middlewares.RateLimiter())
 
 	routes.Init(server)
 
