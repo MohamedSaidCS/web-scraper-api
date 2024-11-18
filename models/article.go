@@ -2,6 +2,8 @@ package models
 
 import (
 	"fmt"
+	"math"
+	"strconv"
 
 	"github.com/MohamedSaidCS/web-scraper-api/db"
 	"github.com/lib/pq"
@@ -35,11 +37,25 @@ func (a *Article) Create() error {
 	return nil
 }
 
-func GetArticles() ([]Article, error) {
-	query := "SELECT * FROM articles"
+func GetArticles(page string, perPage string) ([]Article, int, int, int, int, error) {
+	pageInt, _ := strconv.Atoi(page)
+	perPageInt, err := strconv.Atoi(perPage)
+	if err != nil || perPageInt <= 0 {
+		perPageInt = 5
+	}
+	pages := 1
+	total := -1
+
+	var query string
+	if pageInt >= 1 {
+		query = fmt.Sprintf("SELECT *, COUNT (*) OVER() FROM articles LIMIT %d OFFSET %d", perPageInt, (pageInt-1)*perPageInt)
+	} else {
+		query = "SELECT * FROM articles"
+	}
+
 	rows, err := db.DB.Query(query)
 	if err != nil {
-		return nil, err
+		return nil, 0, 0, 0, 0, err
 	}
 
 	defer rows.Close()
@@ -48,60 +64,30 @@ func GetArticles() ([]Article, error) {
 
 	for rows.Next() {
 		var article Article
-		err := rows.Scan(&article.ID, &article.Title, &article.Link, &article.Timesamp)
+		if pageInt >= 1 {
+			err = rows.Scan(&article.ID, &article.Title, &article.Link, &article.Timesamp, &total)
+		} else {
+			err = rows.Scan(&article.ID, &article.Title, &article.Link, &article.Timesamp)
+		}
 		if err != nil {
-			return nil, err
+			return nil, 0, 0, 0, 0, err
 		}
 
 		articles = append(articles, article)
 	}
 
-	return articles, nil
-}
-
-func GetArticleByID(id int64) (Article, error) {
-	query := "SELECT * FROM articles WHERE id=$1"
-	row := db.DB.QueryRow(query, id)
-
-	var article Article
-	err := row.Scan(&article.ID, &article.Title, &article.Link, &article.Timesamp)
-	if err != nil {
-		return Article{}, err
+	if total == -1 {
+		total = len(articles)
+		perPageInt = total
+		if total == 0 {
+			pageInt = 0
+			pages = 0
+		} else {
+			pageInt = 1
+		}
+	} else {
+		pages = int(math.Ceil(float64(total) / float64(perPageInt)))
 	}
 
-	return article, nil
-}
-
-func (a *Article) Update() error {
-	query := "UPDATE articles SET title=$1, link=$2 WHERE id=$3"
-	stmt, err := db.DB.Prepare(query)
-	if err != nil {
-		return err
-	}
-
-	defer stmt.Close()
-
-	_, err = stmt.Exec(a.Title, a.Link, a.ID)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (a *Article) Delete() error {
-	query := "DELETE FROM articles WHERE id=$1"
-	stmt, err := db.DB.Prepare(query)
-	if err != nil {
-		return err
-	}
-
-	defer stmt.Close()
-
-	_, err = stmt.Exec(a.ID)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return articles, pageInt, perPageInt, pages, total, nil
 }
