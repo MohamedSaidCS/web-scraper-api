@@ -12,6 +12,7 @@ import (
 
 func main() {
 	db.InitDB()
+	db.InitMongoDB()
 
 	c := cron.New()
 
@@ -30,6 +31,8 @@ func main() {
 	server := gin.Default()
 
 	server.Use(middlewares.RateLimiter())
+
+	server.Use(middlewares.RequestLogger())
 
 	routes.Init(server)
 

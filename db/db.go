@@ -24,13 +24,13 @@ func InitDB() {
 	DB, err = sql.Open("postgres", connectionString)
 
 	if err != nil {
-		log.Fatal(err)
+		log.Panic(err)
 	}
 
 	err = DB.Ping()
 
 	if err != nil {
-		log.Fatal(err)
+		log.Panic(err)
 	}
 
 	createArticlesTable()
