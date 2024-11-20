@@ -9,8 +9,7 @@ func RateLimiter() gin.HandlerFunc {
 	limiter := rate.NewLimiter(1, 4)
 	return func(c *gin.Context) {
 		if !limiter.Allow() {
-			c.JSON(429, gin.H{"message": "Too many requests"})
-			c.Abort()
+			c.AbortWithStatusJSON(429, gin.H{"error": "too many requests"})
 			return
 		}
 		c.Next()

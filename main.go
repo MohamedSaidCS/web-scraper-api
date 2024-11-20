@@ -30,9 +30,9 @@ func main() {
 
 	server := gin.Default()
 
-	server.Use(middlewares.RateLimiter())
-
 	server.Use(middlewares.RequestLogger())
+
+	server.Use(middlewares.RateLimiter())
 
 	routes.Init(server)
 
