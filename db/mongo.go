@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 
@@ -17,8 +18,9 @@ func InitMongoDB() {
 	var err error
 	host := os.Getenv("MONGO_HOST")
 	port := os.Getenv("MONGO_PORT")
+	connectionString := fmt.Sprintf("mongodb://%s:%s", host, port)
 
-	Client, err = mongo.Connect(ctx, options.Client().ApplyURI("mongodb://"+host+":"+port))
+	Client, err = mongo.Connect(ctx, options.Client().ApplyURI(connectionString))
 	if err != nil {
 		log.Panic(err)
 	}
